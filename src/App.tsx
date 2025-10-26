@@ -6,6 +6,7 @@ import OtpItem from './components/OtpItem';
 import SearchBar from './components/SearchBar';
 import AddAppModal from './components/AddAppModal';
 import ImportModal from './components/ImportModal';
+import ConfirmModal from './components/ConfirmModal';
 
 interface OtpApp {
   id: string;
@@ -19,6 +20,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [hasMasterPassword, setHasMasterPassword] = useState(false);
 
   useEffect(() => {
@@ -56,6 +58,18 @@ function App() {
     }
   };
 
+  const handleReset = async () => {
+    try {
+      await invoke('reset_master_password');
+      setIsAuthenticated(false);
+      setApps([]);
+      setHasMasterPassword(false);
+      setShowResetModal(false);
+    } catch (error) {
+      console.error('Failed to reset:', error);
+    }
+  };
+
   const handleAddApp = async (name: string, secret: string) => {
     try {
       await invoke('add_app', { name, secret });
@@ -82,7 +96,22 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="auth-container">
-        <MasterPasswordModal onSubmit={handleMasterPassword} isFirstTime={!hasMasterPassword} />
+        <MasterPasswordModal 
+          onSubmit={handleMasterPassword} 
+          onReset={() => setShowResetModal(true)}
+          isFirstTime={!hasMasterPassword} 
+        />
+        
+        <ConfirmModal
+          isOpen={showResetModal}
+          title="Resetar Senha Mestre"
+          message="Esta ação irá apagar TODOS os seus dados e aplicativos cadastrados. Você terá que configurar uma nova senha mestre e adicionar todos os aplicativos novamente. Esta ação não pode ser desfeita."
+          confirmText="Sim, resetar tudo"
+          cancelText="Cancelar"
+          variant="danger"
+          onConfirm={handleReset}
+          onCancel={() => setShowResetModal(false)}
+        />
       </div>
     );
   }

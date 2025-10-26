@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2, RotateCcw } from 'lucide-react';
 
 interface Props {
   onSubmit: (password: string) => Promise<boolean>;
+  onReset?: () => void;
   isFirstTime: boolean;
 }
 
-export default function MasterPasswordModal({ onSubmit, isFirstTime }: Props) {
+export default function MasterPasswordModal({ onSubmit, onReset, isFirstTime }: Props) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,18 @@ export default function MasterPasswordModal({ onSubmit, isFirstTime }: Props) {
             </>
           )}
         </button>
+
+        {!isFirstTime && onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="w-full flex items-center justify-center gap-2 py-2 text-plaxo-text-secondary hover:text-red-500 transition-colors text-sm"
+            disabled={loading}
+          >
+            <RotateCcw className="w-4 h-4" />
+            Resetar tudo e criar nova senha
+          </button>
+        )}
       </form>
     </div>
   );

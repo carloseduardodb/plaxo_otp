@@ -308,6 +308,39 @@ fn delete_app(id: String, state: tauri::State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn reset_master_password(state: tauri::State<AppState>) -> Result<(), String> {
+    println!("Resetando senha mestre e dados...");
+    
+    // Limpa estado na memória
+    {
+        let mut master_pass = state.master_password.lock().unwrap();
+        let mut encryption_key = state.encryption_key.lock().unwrap();
+        let mut apps = state.apps.lock().unwrap();
+        
+        *master_pass = None;
+        *encryption_key = None;
+        apps.clear();
+    }
+    
+    // Remove arquivos do disco
+    let file_path = get_data_file_path();
+    let backup_path = format!("{}.backup", file_path.to_string_lossy());
+    
+    if file_path.exists() {
+        fs::remove_file(&file_path).map_err(|e| format!("Erro ao remover arquivo principal: {}", e))?;
+        println!("Arquivo principal removido");
+    }
+    
+    if std::path::Path::new(&backup_path).exists() {
+        fs::remove_file(&backup_path).map_err(|e| format!("Erro ao remover backup: {}", e))?;
+        println!("Backup removido");
+    }
+    
+    println!("Reset concluído com sucesso");
+    Ok(())
+}
+
+#[tauri::command]
 fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String, String> {
     let apps = state.apps.lock().unwrap();
     let app = apps.iter().find(|a| a.id == app_id)
@@ -379,6 +412,7 @@ fn main() {
             copy_to_clipboard,
             import_2fas_file,
             verify_master_password,
+            reset_master_password,
             get_apps,
             add_app,
             delete_app,
