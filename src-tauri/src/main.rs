@@ -397,9 +397,12 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
 
 fn create_tray() -> SystemTray {
     let open = CustomMenuItem::new("open".to_string(), "Open");
+    let autostart = CustomMenuItem::new("autostart".to_string(), "Start with system");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let tray_menu = SystemTrayMenu::new()
         .add_item(open)
+        .add_native_item(tauri::SystemTrayMenuItem::Separator)
+        .add_item(autostart)
         .add_native_item(tauri::SystemTrayMenuItem::Separator)
         .add_item(quit);
     SystemTray::new().with_menu(tray_menu)
@@ -423,6 +426,20 @@ fn handle_tray_event<R: Runtime>(app: &AppHandle<R>, event: SystemTrayEvent) {
                     window.show().unwrap();
                     window.set_focus().unwrap();
                 }
+                "autostart" => {
+                    // Toggle autostart
+                    match get_autostart_status() {
+                        Ok(current_status) => {
+                            if let Err(e) = set_autostart(!current_status) {
+                                println!("Erro ao alterar autostart: {}", e);
+                            } else {
+                                // Update tray menu
+                                update_tray_menu(app, !current_status);
+                            }
+                        }
+                        Err(e) => println!("Erro ao verificar autostart: {}", e),
+                    }
+                }
                 "quit" => {
                     std::process::exit(0);
                 }
@@ -430,6 +447,28 @@ fn handle_tray_event<R: Runtime>(app: &AppHandle<R>, event: SystemTrayEvent) {
             }
         }
         _ => {}
+    }
+}
+
+fn update_tray_menu<R: Runtime>(app: &AppHandle<R>, autostart_enabled: bool) {
+    let open = CustomMenuItem::new("open".to_string(), "Open");
+    let autostart_text = if autostart_enabled {
+        "✓ Start with system"
+    } else {
+        "Start with system"
+    };
+    let autostart = CustomMenuItem::new("autostart".to_string(), autostart_text);
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(open)
+        .add_native_item(tauri::SystemTrayMenuItem::Separator)
+        .add_item(autostart)
+        .add_native_item(tauri::SystemTrayMenuItem::Separator)
+        .add_item(quit);
+    
+    if let Err(e) = app.tray_handle().set_menu(tray_menu) {
+        println!("Erro ao atualizar menu do tray: {}", e);
     }
 }
 
@@ -444,6 +483,12 @@ fn main() {
         .manage(state)
         .system_tray(create_tray())
         .on_system_tray_event(handle_tray_event)
+        .setup(|app| {
+            // Initialize tray menu with correct autostart status
+            let autostart_enabled = get_autostart_status().unwrap_or(false);
+            update_tray_menu(&app.handle(), autostart_enabled);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             has_master_password,
             copy_to_clipboard,
