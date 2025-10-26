@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use auto_launch::AutoLaunchBuilder;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{
@@ -308,6 +309,42 @@ fn delete_app(id: String, state: tauri::State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn set_autostart(enabled: bool) -> Result<(), String> {
+    let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_str = exe_path.to_str().ok_or("Invalid executable path")?;
+    
+    let auto_launch = AutoLaunchBuilder::new()
+        .set_app_name("Plaxo OTP")
+        .set_app_path(exe_str)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    if enabled {
+        auto_launch.enable().map_err(|e| e.to_string())?;
+        println!("Autostart habilitado");
+    } else {
+        auto_launch.disable().map_err(|e| e.to_string())?;
+        println!("Autostart desabilitado");
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn get_autostart_status() -> Result<bool, String> {
+    let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_str = exe_path.to_str().ok_or("Invalid executable path")?;
+    
+    let auto_launch = AutoLaunchBuilder::new()
+        .set_app_name("Plaxo OTP")
+        .set_app_path(exe_str)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    auto_launch.is_enabled().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn reset_master_password(state: tauri::State<AppState>) -> Result<(), String> {
     println!("Resetando senha mestre e dados...");
     
@@ -412,6 +449,8 @@ fn main() {
             copy_to_clipboard,
             import_2fas_file,
             verify_master_password,
+            set_autostart,
+            get_autostart_status,
             reset_master_password,
             get_apps,
             add_app,

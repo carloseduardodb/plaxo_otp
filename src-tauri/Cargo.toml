@@ -21,6 +21,7 @@ sha2 = "0.10"
 base64 = "0.21"
 dirs = "5.0"
 rand = "0.8"
+auto-launch = "0.5"
 
 [features]
 default = ["custom-protocol"]

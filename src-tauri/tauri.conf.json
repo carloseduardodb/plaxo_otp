@@ -60,6 +60,37 @@
       "iconPath": "icons/tray-icon.png",
       "iconAsTemplate": false,
       "menuOnLeftClick": false
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.plaxo.otp",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "category": "Utility",
+      "shortDescription": "Secure OTP code generator",
+      "longDescription": "A secure desktop application for generating OTP codes with military-grade encryption",
+      "deb": {
+        "depends": []
+      },
+      "macOS": {
+        "frameworks": [],
+        "minimumSystemVersion": "",
+        "exceptionDomain": "",
+        "signingIdentity": null,
+        "providerShortName": null,
+        "entitlements": null
+      },
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
     }
   }
 }
