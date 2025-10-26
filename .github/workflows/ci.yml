@@ -41,14 +41,13 @@ jobs:
       - name: Lint TypeScript
         run: npx tsc --noEmit
 
-      - name: Check Rust code
-        run: cargo check --manifest-path src-tauri/Cargo.toml
-
       - name: Build frontend
         run: |
           npm run build
           ls -la dist/
-          pwd
+
+      - name: Check Rust code
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Test Tauri build
         run: |
