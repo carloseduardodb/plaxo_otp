@@ -155,6 +155,7 @@ function App() {
                   key={app.id}
                   app={app}
                   onDelete={handleDeleteApp}
+                  onEdit={loadApps}
                 />
               ))}
             </div>
