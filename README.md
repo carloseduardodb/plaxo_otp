@@ -48,7 +48,7 @@ Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Tim
 
 ### Releases Automáticos
 
-Baixe a versão mais recente na [página de releases](https://github.com/seu-usuario/plaxo-otp/releases/latest):
+Baixe a versão mais recente na [página de releases](https://github.com/carloseduardodb/plaxo_otp/releases/latest):
 
 - **Windows**: `Plaxo-OTP_x.x.x_x64_en-US.msi`
 - **macOS**: `Plaxo-OTP_x.x.x_x64.dmg`
@@ -88,7 +88,7 @@ xcode-select --install
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/plaxo-otp.git
+git clone https://github.com/carloseduardodb/plaxo_otp.git
 cd plaxo-otp
 
 # Instale dependências
@@ -197,8 +197,8 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 🆘 Suporte
 
-- **Issues**: [GitHub Issues](https://github.com/seu-usuario/plaxo-otp/issues)
-- **Discussões**: [GitHub Discussions](https://github.com/seu-usuario/plaxo-otp/discussions)
+- **Issues**: [GitHub Issues](https://github.com/carloseduardodb/plaxo_otp/issues)
+- **Discussões**: [GitHub Discussions](https://github.com/carloseduardodb/plaxo_otp/discussions)
 - **Email**: suporte@plaxo.com
 
 ## 🙏 Agradecimentos
