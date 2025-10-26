@@ -395,7 +395,7 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
     let app = apps.iter().find(|a| a.id == app_id)
         .ok_or("App não encontrado".to_string())?;
     
-    println!("Gerando OTP para: {} com secret: {}", app.name, &app.secret[..std::cmp::min(8, app.secret.len())]);
+    println!("Gerando OTP para: {} com secret completo: {} (tamanho: {})", app.name, app.secret, app.secret.len());
     
     // Remove espaços, hífens e converte para maiúsculo
     let clean_secret = app.secret
