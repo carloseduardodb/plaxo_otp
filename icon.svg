@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A3E635"/>
+      <stop offset="100%" style="stop-color:#84CC16"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  
+  <!-- Shield -->
+  <path d="M256 80 C320 80 360 120 360 160 L360 280 C360 360 320 400 256 432 C192 400 152 360 152 280 L152 160 C152 120 192 80 256 80 Z" fill="url(#shield)"/>
+  
+  <!-- Lock -->
+  <rect x="220" y="240" width="72" height="80" rx="8" fill="#0F172A"/>
+  <rect x="228" y="248" width="56" height="64" rx="4" fill="#F8FAFC"/>
+  
+  <!-- Lock shackle -->
+  <path d="M236 240 L236 220 C236 209 245 200 256 200 C267 200 276 209 276 220 L276 240" stroke="#0F172A" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- OTP dots -->
+  <circle cx="240" cy="280" r="6" fill="#A3E635"/>
+  <circle cx="256" cy="280" r="6" fill="#A3E635"/>
+  <circle cx="272" cy="280" r="6" fill="#A3E635"/>
+</svg>
