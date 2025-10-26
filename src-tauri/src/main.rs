@@ -193,6 +193,16 @@ fn import_2fas_file(file_content: String, state: tauri::State<AppState>) -> Resu
             service.get("name").and_then(|n| n.as_str()),
             service.get("secret").and_then(|s| s.as_str())
         ) {
+            println!("Importando: {} com secret: {}", name, &secret[..std::cmp::min(10, secret.len())]);
+            
+            // Verifica se o secret parece válido (Base32)
+            let clean_secret = secret.replace(" ", "").replace("-", "").to_uppercase();
+            if clean_secret.chars().all(|c| "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=".contains(c)) {
+                println!("Secret parece válido (Base32)");
+            } else {
+                println!("AVISO: Secret pode não ser Base32 válido");
+            }
+            
             let app = OtpApp {
                 id: uuid::Uuid::new_v4().to_string(),
                 name: name.to_string(),
@@ -201,6 +211,8 @@ fn import_2fas_file(file_content: String, state: tauri::State<AppState>) -> Resu
             apps.push(app);
             imported_count += 1;
             println!("Importado: {}", name);
+        } else {
+            println!("Serviço ignorado - faltam campos obrigatórios: {:?}", service);
         }
     }
     
