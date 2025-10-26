@@ -16,10 +16,12 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup2.4-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
-          # Create symlinks for 4.0 compatibility
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc || true
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc || true
+          # Install available packages
+          sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup2.4-dev libsoup-3.0-dev
+          # Try to install webkit2gtk 4.0 from universe repo
+          sudo apt-get install -y libwebkit2gtk-4.0-dev || sudo apt-get install -y libwebkit2gtk-4.1-dev
+          # Install javascriptcore
+          sudo apt-get install -y libjavascriptcoregtk-4.0-dev || sudo apt-get install -y libjavascriptcoregtk-4.1-dev
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
