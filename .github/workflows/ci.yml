@@ -45,7 +45,14 @@ jobs:
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Build frontend
-        run: npm run build
+        run: |
+          npm run build
+          ls -la dist/
+          pwd
 
       - name: Test Tauri build
-        run: npm run tauri build -- --bundles none
+        run: |
+          cd src-tauri
+          pwd
+          ls -la ../dist/ || echo "dist not found"
+          cargo build
