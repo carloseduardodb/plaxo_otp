@@ -193,7 +193,7 @@ fn import_2fas_file(file_content: String, state: tauri::State<AppState>) -> Resu
             service.get("name").and_then(|n| n.as_str()),
             service.get("secret").and_then(|s| s.as_str())
         ) {
-            println!("Importando: {} com secret: {}", name, &secret[..std::cmp::min(10, secret.len())]);
+            println!("Importando: {} com secret completo: {} (tamanho: {})", name, secret, secret.len());
             
             // Verifica se o secret parece válido (Base32)
             let clean_secret = secret.replace(" ", "").replace("-", "").to_uppercase();
