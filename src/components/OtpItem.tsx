@@ -24,6 +24,7 @@ export default function OtpItem({ app, onDelete }: Props) {
         setOtp(code);
       } catch (error) {
         console.error('Failed to generate OTP:', error);
+        setOtp('ERROR');
       }
     };
 
@@ -83,9 +84,16 @@ export default function OtpItem({ app, onDelete }: Props) {
       
       <div className="space-y-3">
         <div className="text-center">
-          <div className="font-mono text-3xl font-bold text-plaxo-primary mb-2 tracking-wider select-all">
-            {otp}
+          <div className={`font-mono text-3xl font-bold mb-2 tracking-wider select-all ${
+            otp === 'ERROR' ? 'text-red-500' : 'text-plaxo-primary'
+          }`}>
+            {otp === 'ERROR' ? 'INVALID' : (otp || '------')}
           </div>
+          {otp === 'ERROR' && (
+            <div className="text-xs text-red-500 mb-2">
+              Chave secreta inválida
+            </div>
+          )}
         </div>
         
         <div className="space-y-2">

@@ -383,18 +383,51 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
     let app = apps.iter().find(|a| a.id == app_id)
         .ok_or("App não encontrado".to_string())?;
     
-    // Remove espaços e converte para maiúsculo
-    let clean_secret = app.secret.replace(" ", "").to_uppercase();
+    println!("Gerando OTP para: {} com secret: {}", app.name, &app.secret[..std::cmp::min(8, app.secret.len())]);
+    
+    // Remove espaços, hífens e converte para maiúsculo
+    let clean_secret = app.secret
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("=", "")
+        .to_uppercase();
+    
+    println!("Secret limpo: {}", &clean_secret[..std::cmp::min(8, clean_secret.len())]);
+    
+    // Valida se é Base32 válido
+    if clean_secret.is_empty() {
+        return Err("Chave secreta vazia".to_string());
+    }
+    
+    // Tenta decodificar Base32
+    let secret_bytes = match Secret::Encoded(clean_secret.clone()).to_bytes() {
+        Ok(bytes) => {
+            println!("Base32 decodificado com sucesso, {} bytes", bytes.len());
+            bytes
+        }
+        Err(e) => {
+            println!("Erro ao decodificar Base32: {}", e);
+            return Err(format!("Chave secreta inválida: {}", e));
+        }
+    };
     
     let totp = TOTP::new(
         Algorithm::SHA1,
         6,
         1,
         30,
-        Secret::Encoded(clean_secret).to_bytes().map_err(|e| e.to_string())?,
-    ).map_err(|e| e.to_string())?;
+        secret_bytes,
+    ).map_err(|e| {
+        println!("Erro ao criar TOTP: {}", e);
+        e.to_string()
+    })?;
     
-    let code = totp.generate_current().map_err(|e| e.to_string())?;
+    let code = totp.generate_current().map_err(|e| {
+        println!("Erro ao gerar código: {}", e);
+        e.to_string()
+    })?;
+    
+    println!("Código gerado: {}", code);
     Ok(code)
 }
 
