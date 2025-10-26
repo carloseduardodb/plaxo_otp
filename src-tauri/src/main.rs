@@ -404,7 +404,7 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
         .replace("=", "")
         .to_uppercase();
     
-    println!("Secret limpo: {}", &clean_secret[..std::cmp::min(8, clean_secret.len())]);
+    println!("Secret limpo completo: {} (tamanho: {})", clean_secret, clean_secret.len());
     
     // Valida se é Base32 válido
     if clean_secret.is_empty() {
