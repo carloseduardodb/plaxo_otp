@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { Copy, Trash2, Check, Clock } from 'lucide-react';
+import { Copy, Trash2, Check, Clock, Edit3, X } from 'lucide-react';
 import { getPlatformIcon, getPlatformColor } from '../utils/platformIcons';
 
 interface Props {
@@ -10,12 +10,15 @@ interface Props {
     secret: string;
   };
   onDelete: (id: string) => void;
+  onEdit?: () => void;
 }
 
-export default function OtpItem({ app, onDelete }: Props) {
+export default function OtpItem({ app, onDelete, onEdit }: Props) {
   const [otp, setOtp] = useState('------');
   const [timeLeft, setTimeLeft] = useState(30);
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(app.name);
 
   useEffect(() => {
     const generateOtp = async () => {
@@ -40,18 +43,37 @@ export default function OtpItem({ app, onDelete }: Props) {
 
     generateOtp();
     updateTimer();
-    
     const interval = setInterval(updateTimer, 1000);
+
     return () => clearInterval(interval);
   }, [app.id]);
 
+  const handleEdit = async () => {
+    if (editName.trim() && editName !== app.name) {
+      try {
+        await invoke('edit_app_name', { id: app.id, newName: editName.trim() });
+        onEdit?.();
+      } catch (error) {
+        console.error('Failed to edit app name:', error);
+      }
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditName(app.name);
+    setIsEditing(false);
+  };
+
   const copyToClipboard = async () => {
-    try {
-      await invoke('copy_to_clipboard', { text: otp });
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    if (otp && otp !== 'ERROR') {
+      try {
+        await invoke('copy_to_clipboard', { text: otp });
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+      }
     }
   };
 
@@ -71,15 +93,54 @@ export default function OtpItem({ app, onDelete }: Props) {
           >
             <PlatformIcon className="w-5 h-5" />
           </div>
-          <h3 className="font-semibold text-plaxo-text truncate">{app.name}</h3>
+          {isEditing ? (
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="flex-1 bg-transparent text-plaxo-text font-semibold border-b border-plaxo-primary focus:outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleEdit();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+                autoFocus
+              />
+              <button
+                onClick={handleEdit}
+                className="text-green-500 hover:text-green-600 p-1"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="text-red-500 hover:text-red-600 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <h3 className="font-semibold text-plaxo-text truncate">{app.name}</h3>
+          )}
         </div>
-        <button
-          onClick={() => onDelete(app.id)}
-          className="text-plaxo-text-secondary hover:text-plaxo-error p-1.5 rounded-lg hover:bg-plaxo-error/10 transition-colors"
-          title="Remover aplicativo"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="text-plaxo-text-secondary hover:text-plaxo-text p-1.5 rounded-lg hover:bg-plaxo-hover transition-colors"
+              title="Editar nome"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(app.id)}
+            className="text-plaxo-text-secondary hover:text-plaxo-error p-1.5 rounded-lg hover:bg-plaxo-error/10 transition-colors"
+            title="Remover aplicativo"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       
       <div className="space-y-3">
@@ -105,22 +166,24 @@ export default function OtpItem({ app, onDelete }: Props) {
           </div>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-sm text-plaxo-text-secondary">
-              <Clock className="w-3.5 h-3.5" />
-              <span className={isExpiring ? 'text-plaxo-warning' : ''}>{timeLeft}s</span>
+            <div className="flex items-center gap-2 text-xs text-plaxo-text-secondary">
+              <Clock className="w-3 h-3" />
+              <span>{timeLeft}s restantes</span>
             </div>
+            
             <button
               onClick={copyToClipboard}
-              className="flex items-center gap-1.5 bg-plaxo-primary hover:bg-plaxo-primary-hover text-plaxo-background px-3 py-1.5 rounded-lg font-medium transition-colors text-sm"
+              disabled={otp === 'ERROR'}
+              className="flex items-center gap-2 px-3 py-1.5 bg-plaxo-primary hover:bg-plaxo-primary-hover text-plaxo-background text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
-                  Copiado
+                  <Check className="w-3 h-3" />
+                  Copiado!
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className="w-3 h-3" />
                   Copiar
                 </>
               )}

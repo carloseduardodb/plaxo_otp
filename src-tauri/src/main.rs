@@ -31,7 +31,6 @@ fn get_data_file_path() -> PathBuf {
     path.push(".plaxo-otp");
     std::fs::create_dir_all(&path).unwrap_or_default();
     path.push("apps.enc");
-    println!("Caminho do arquivo: {:?}", path);
     path
 }
 
@@ -87,8 +86,6 @@ fn save_apps(apps: &[OtpApp], key: &[u8; 32]) -> Result<(), String> {
     let encrypted = encrypt_data(&json, key)?;
     let file_path = get_data_file_path();
     
-    println!("Salvando {} apps em: {:?}", apps.len(), file_path);
-    
     // Escrita segura com arquivo temporário
     let temp_path = format!("{}.tmp", file_path.to_string_lossy());
     
@@ -104,7 +101,6 @@ fn save_apps(apps: &[OtpApp], key: &[u8; 32]) -> Result<(), String> {
     // Move atomicamente para o arquivo final
     fs::rename(&temp_path, &file_path).map_err(|e| format!("Erro ao finalizar salvamento: {}", e))?;
     
-    println!("Arquivo salvo com sucesso");
     Ok(())
 }
 
@@ -193,14 +189,10 @@ fn import_2fas_file(file_content: String, state: tauri::State<AppState>) -> Resu
             service.get("name").and_then(|n| n.as_str()),
             service.get("secret").and_then(|s| s.as_str())
         ) {
-            println!("Importando: {} com secret completo: {} (tamanho: {})", name, secret, secret.len());
-            
             // Verifica se o secret parece válido (Base32)
             let clean_secret = secret.replace(" ", "").replace("-", "").to_uppercase();
-            if clean_secret.chars().all(|c| "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=".contains(c)) {
-                println!("Secret parece válido (Base32)");
-            } else {
-                println!("AVISO: Secret pode não ser Base32 válido");
+            if !clean_secret.chars().all(|c| "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=".contains(c)) {
+                continue; // Pula secrets inválidos
             }
             
             let app = OtpApp {
@@ -296,6 +288,27 @@ fn add_app(name: String, secret: String, state: tauri::State<AppState>) -> Resul
     }
     
     Ok(())
+}
+
+#[tauri::command]
+fn edit_app_name(id: String, new_name: String, state: tauri::State<AppState>) -> Result<(), String> {
+    let mut apps = state.apps.lock().unwrap();
+    
+    if let Some(app) = apps.iter_mut().find(|a| a.id == id) {
+        app.name = new_name;
+        
+        // Salva os dados criptografados
+        let encryption_key = state.encryption_key.lock().unwrap();
+        if let Some(key) = encryption_key.as_ref() {
+            save_apps(&apps, key)?;
+        } else {
+            return Err("Chave de criptografia não encontrada".to_string());
+        }
+        
+        Ok(())
+    } else {
+        Err("App não encontrado".to_string())
+    }
 }
 
 #[tauri::command]
@@ -395,16 +408,12 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
     let app = apps.iter().find(|a| a.id == app_id)
         .ok_or("App não encontrado".to_string())?;
     
-    println!("Gerando OTP para: {} com secret completo: {} (tamanho: {})", app.name, app.secret, app.secret.len());
-    
     // Remove espaços, hífens e converte para maiúsculo
     let clean_secret = app.secret
         .replace(" ", "")
         .replace("-", "")
         .replace("=", "")
         .to_uppercase();
-    
-    println!("Secret limpo completo: {} (tamanho: {})", clean_secret, clean_secret.len());
     
     // Valida se é Base32 válido
     if clean_secret.is_empty() {
@@ -413,32 +422,20 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
     
     // Tenta decodificar Base32
     let secret_bytes = match Secret::Encoded(clean_secret.clone()).to_bytes() {
-        Ok(bytes) => {
-            println!("Base32 decodificado com sucesso, {} bytes", bytes.len());
-            bytes
-        }
-        Err(e) => {
-            println!("Erro ao decodificar Base32: {}", e);
-            return Err(format!("Chave secreta inválida: {}", e));
-        }
+        Ok(bytes) => bytes,
+        Err(e) => return Err(format!("Chave secreta inválida: {}", e)),
     };
     
     // Cria TOTP sem validação rígida de tamanho
     let totp = match TOTP::new(Algorithm::SHA1, 6, 1, 30, secret_bytes.clone()) {
         Ok(t) => t,
-        Err(e) => {
-            println!("TOTP::new falhou ({}), tentando new_unchecked", e);
+        Err(_) => {
             // Se falhar por tamanho, usa new_unchecked que não valida
             TOTP::new_unchecked(Algorithm::SHA1, 6, 1, 30, secret_bytes)
         }
     };
     
-    let code = totp.generate_current().map_err(|e| {
-        println!("Erro ao gerar código: {}", e);
-        e.to_string()
-    })?;
-    
-    println!("Código gerado: {}", code);
+    let code = totp.generate_current().map_err(|e| e.to_string())?;
     Ok(code)
 }
 
@@ -546,6 +543,7 @@ fn main() {
             reset_master_password,
             get_apps,
             add_app,
+            edit_app_name,
             delete_app,
             generate_otp
         ])
