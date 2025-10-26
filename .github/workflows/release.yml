@@ -2,8 +2,8 @@ name: 'Release Build'
 
 on:
   push:
-    branches: [ main ]
     tags: [ 'v*' ]
+  workflow_dispatch:
 
 jobs:
   release:
@@ -57,8 +57,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name != 'main' && github.ref_name || '' }}
-          releaseName: 'Plaxo OTP ${{ github.ref_name != 'main' && github.ref_name || 'Latest' }}'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Plaxo OTP ${{ github.ref_name }}'
           releaseBody: |
             🔐 **Plaxo OTP** - Gerador seguro de códigos OTP
             
@@ -87,5 +87,5 @@ jobs:
             
             **Primeira vez?** Veja o [README completo](https://github.com/${{ github.repository }}) para mais detalhes.
           releaseDraft: false
-          prerelease: ${{ github.ref_name == 'main' }}
+          prerelease: false
           args: ${{ matrix.args }}
