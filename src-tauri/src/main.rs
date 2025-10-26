@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use tauri::{
     AppHandle, ClipboardManager, CustomMenuItem, Manager, Runtime, SystemTray, SystemTrayEvent, SystemTrayMenu,
 };
-use totp_rs::{Algorithm, TOTP};
+use totp_rs::{Algorithm, TOTP, Secret};
 use aes_gcm::{Aes256Gcm, Key, Nonce, aead::{Aead, KeyInit}};
 use sha2::{Sha256, Digest};
 use base64::{Engine as _, engine::general_purpose};
@@ -383,12 +383,15 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
     let app = apps.iter().find(|a| a.id == app_id)
         .ok_or("App não encontrado".to_string())?;
     
+    // Remove espaços e converte para maiúsculo
+    let clean_secret = app.secret.replace(" ", "").to_uppercase();
+    
     let totp = TOTP::new(
         Algorithm::SHA1,
         6,
         1,
         30,
-        app.secret.as_bytes().to_vec(),
+        Secret::Encoded(clean_secret).to_bytes().map_err(|e| e.to_string())?,
     ).map_err(|e| e.to_string())?;
     
     let code = totp.generate_current().map_err(|e| e.to_string())?;
