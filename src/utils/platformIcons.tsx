@@ -11,8 +11,7 @@ import {
   Shield,
   Smartphone,
   Globe,
-  Key,
-  Lock
+  Key
 } from 'lucide-react';
 
 const platformIcons: Record<string, React.ComponentType<any>> = {

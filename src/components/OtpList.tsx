@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import OtpItem from './OtpItem';
 
 interface OtpApp {

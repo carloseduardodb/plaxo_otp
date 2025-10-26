@@ -87,7 +87,22 @@ fn save_apps(apps: &[OtpApp], key: &[u8; 32]) -> Result<(), String> {
     let file_path = get_data_file_path();
     
     println!("Salvando {} apps em: {:?}", apps.len(), file_path);
-    fs::write(&file_path, encrypted).map_err(|e| format!("Erro ao salvar arquivo: {}", e))?;
+    
+    // Escrita segura com arquivo temporário
+    let temp_path = format!("{}.tmp", file_path.to_string_lossy());
+    
+    // Backup do arquivo atual se existir
+    if file_path.exists() {
+        let backup_path = format!("{}.backup", file_path.to_string_lossy());
+        fs::copy(&file_path, &backup_path).map_err(|e| format!("Erro ao criar backup: {}", e))?;
+    }
+    
+    // Escreve no arquivo temporário
+    fs::write(&temp_path, &encrypted).map_err(|e| format!("Erro ao escrever arquivo temporário: {}", e))?;
+    
+    // Move atomicamente para o arquivo final
+    fs::rename(&temp_path, &file_path).map_err(|e| format!("Erro ao finalizar salvamento: {}", e))?;
+    
     println!("Arquivo salvo com sucesso");
     Ok(())
 }
@@ -99,10 +114,41 @@ fn load_apps(key: &[u8; 32]) -> Result<Vec<OtpApp>, String> {
         return Ok(Vec::new());
     }
     
+    // Tenta carregar o arquivo principal
+    match try_load_file(&file_path, key) {
+        Ok(apps) => Ok(apps),
+        Err(e) => {
+            println!("Erro ao carregar arquivo principal: {}", e);
+            
+            // Tenta carregar do backup
+            let backup_path = format!("{}.backup", file_path.to_string_lossy());
+            if std::path::Path::new(&backup_path).exists() {
+                println!("Tentando carregar do backup...");
+                match try_load_file(&std::path::PathBuf::from(&backup_path), key) {
+                    Ok(apps) => {
+                        println!("Backup carregado com sucesso, restaurando arquivo principal...");
+                        // Restaura o arquivo principal do backup
+                        if let Err(restore_err) = fs::copy(&backup_path, &file_path) {
+                            println!("Aviso: Não foi possível restaurar arquivo principal: {}", restore_err);
+                        }
+                        Ok(apps)
+                    }
+                    Err(backup_err) => {
+                        println!("Backup também corrompido: {}", backup_err);
+                        Err(e) // Retorna o erro original
+                    }
+                }
+            } else {
+                Err(e)
+            }
+        }
+    }
+}
+
+fn try_load_file(file_path: &std::path::Path, key: &[u8; 32]) -> Result<Vec<OtpApp>, String> {
     let encrypted_data = fs::read_to_string(file_path).map_err(|_| "Erro ao ler arquivo".to_string())?;
     let decrypted = decrypt_data(&encrypted_data, key)?;
     let apps: Vec<OtpApp> = serde_json::from_str(&decrypted).map_err(|_| "Dados corrompidos".to_string())?;
-    
     Ok(apps)
 }
 
