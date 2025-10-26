@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,12 +16,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          # Install available packages
-          sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup2.4-dev libsoup-3.0-dev
-          # Try to install webkit2gtk 4.0 from universe repo
-          sudo apt-get install -y libwebkit2gtk-4.0-dev || sudo apt-get install -y libwebkit2gtk-4.1-dev
-          # Install javascriptcore
-          sudo apt-get install -y libjavascriptcoregtk-4.0-dev || sudo apt-get install -y libjavascriptcoregtk-4.1-dev
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
