@@ -423,16 +423,15 @@ fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String,
         }
     };
     
-    let totp = TOTP::new(
-        Algorithm::SHA1,
-        6,
-        1,
-        30,
-        secret_bytes,
-    ).map_err(|e| {
-        println!("Erro ao criar TOTP: {}", e);
-        e.to_string()
-    })?;
+    // Cria TOTP sem validação rígida de tamanho
+    let totp = match TOTP::new(Algorithm::SHA1, 6, 1, 30, secret_bytes.clone()) {
+        Ok(t) => t,
+        Err(e) => {
+            println!("TOTP::new falhou ({}), tentando new_unchecked", e);
+            // Se falhar por tamanho, usa new_unchecked que não valida
+            TOTP::new_unchecked(Algorithm::SHA1, 6, 1, 30, secret_bytes)
+        }
+    };
     
     let code = totp.generate_current().map_err(|e| {
         println!("Erro ao gerar código: {}", e);
