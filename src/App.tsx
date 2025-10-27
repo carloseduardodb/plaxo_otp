@@ -7,7 +7,6 @@ import SearchBar from './components/SearchBar';
 import AddAppModal from './components/AddAppModal';
 import ImportModal from './components/ImportModal';
 import ConfirmModal from './components/ConfirmModal';
-import WindowControls from './components/WindowControls';
 
 interface OtpApp {
   id: string;
