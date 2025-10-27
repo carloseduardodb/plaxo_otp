@@ -57,8 +57,8 @@ export default function ImportModal({ onClose, onImportComplete }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-plaxo-surface border border-plaxo-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-plaxo-surface border border-plaxo-border rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 bg-plaxo-primary/10 rounded-xl">
@@ -79,7 +79,7 @@ export default function ImportModal({ onClose, onImportComplete }: Props) {
 
         <div className="space-y-4">
           <div
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+            className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
               dragOver 
                 ? 'border-plaxo-primary bg-plaxo-primary/5' 
                 : 'border-plaxo-border hover:border-plaxo-primary/50'

@@ -53,14 +53,16 @@ export default function MasterPasswordModal({ onSubmit, onReset, isFirstTime }: 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite sua senha mestre"
-              className="w-full px-4 py-3 pr-12 bg-plaxo-background/50 border border-plaxo-border rounded-xl text-plaxo-text placeholder-plaxo-text-secondary focus:outline-none focus:border-plaxo-primary focus:ring-2 focus:ring-plaxo-primary/20 transition-all"
+              className="w-full px-4 py-3 pr-12 bg-plaxo-background/50 border border-plaxo-border rounded-xl text-plaxo-text placeholder-plaxo-text-secondary focus:outline-none focus:border-plaxo-primary focus:ring-2 focus:ring-plaxo-primary/20 transition-all [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
               disabled={loading}
+              autoComplete="current-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-plaxo-text-secondary hover:text-plaxo-text transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-plaxo-text-secondary hover:text-plaxo-text transition-colors z-10"
               disabled={loading}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>

@@ -527,6 +527,13 @@ fn main() {
         .manage(state)
         .system_tray(create_tray())
         .on_system_tray_event(handle_tray_event)
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+            _ => {}
+        })
         .setup(|app| {
             // Initialize tray menu with correct autostart status
             let autostart_enabled = get_autostart_status().unwrap_or(false);
