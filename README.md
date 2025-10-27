@@ -183,6 +183,13 @@ sha2 = "0.10"
 uuid = "1.0"
 ```
 
+## Roadmap
+- Sincronização em nuvem.
+- Aceite colar imagem QRCode ao adicionar novo aplicativo.
+- Monitoramento do salvamento em nuvem.
+- Novo app mobile.
+- Compartilhamento de codigo de apps entre dispositivos.
+
 ## 🤝 Contribuindo
 
 1. **Fork** o projeto
