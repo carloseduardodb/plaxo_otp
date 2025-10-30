@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { Cloud, CloudOff, X } from 'lucide-react';
+import { Cloud, CloudOff } from 'lucide-react';
 
 export const GoogleDriveSync: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,15 +35,7 @@ export const GoogleDriveSync: React.FC = () => {
     }
   };
 
-  const handleDisconnect = async () => {
-    try {
-      await invoke('clear_google_auth');
-      setIsAuthenticated(false);
-      console.log('🗑️ Google Drive desconectado - Sincronização automática desativada');
-    } catch (error) {
-      console.error('Erro ao desconectar:', error);
-    }
-  };
+
 
   return (
     <div className="flex items-center">
