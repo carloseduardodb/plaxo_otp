@@ -15,6 +15,7 @@ pub fn derive_key(password: &str) -> [u8; 32] {
     hasher.finalize().into()
 }
 
+#[allow(deprecated)]
 pub fn encrypt_data(data: &str, key: &[u8; 32]) -> Result<String> {
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
     
@@ -34,6 +35,7 @@ pub fn encrypt_data(data: &str, key: &[u8; 32]) -> Result<String> {
     Ok(general_purpose::STANDARD.encode(result))
 }
 
+#[allow(deprecated)]
 pub fn decrypt_data(encrypted_data: &str, key: &[u8; 32]) -> Result<String> {
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
     

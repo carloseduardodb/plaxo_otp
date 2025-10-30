@@ -60,23 +60,7 @@ impl QrCodeReader {
         Ok(secret.to_string())
     }
 
-    pub fn extract_name_from_otpauth(&self, content: &str) -> Option<String> {
-        if !content.starts_with("otpauth://totp/") {
-            return None;
-        }
-        
-        // Extract name from the path part
-        let path_start = "otpauth://totp/".len();
-        let path_part = &content[path_start..];
-        
-        if let Some(query_start) = path_part.find('?') {
-            let name_part = &path_part[..query_start];
-            // URL decode the name
-            urlencoding::decode(name_part).ok().map(|s| s.to_string())
-        } else {
-            None
-        }
-    }
+
 }
 
 impl Default for QrCodeReader {

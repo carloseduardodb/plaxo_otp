@@ -54,6 +54,27 @@ Baixe a versão mais recente na [página de releases](https://github.com/carlose
 - **macOS**: `Plaxo-OTP_x.x.x_x64.dmg`
 - **Linux**: `plaxo-otp_x.x.x_amd64.deb` ou `plaxo-otp_x.x.x_amd64.AppImage`
 
+### Instalação no Ubuntu 24.04
+
+O Ubuntu 24.04 não inclui a biblioteca `libwebkit2gtk-4.0-37` necessária para o aplicativo. Para resolver isso:
+
+```bash
+# Adicione o repositório do Ubuntu 22.04 (Jammy)
+echo "deb http://br.archive.ubuntu.com/ubuntu jammy main" | sudo tee -a /etc/apt/sources.list
+
+# Atualize e instale as dependências necessárias
+sudo apt update
+sudo apt install libwebkit2gtk-4.0-dev libwebkit2gtk-4.0-37
+
+# Instale o Plaxo OTP
+sudo dpkg -i plaxo-otp_x.x.x_amd64.deb
+
+# Se houver problemas de dependências, execute:
+sudo apt --fix-broken install
+```
+
+**Nota**: Esta solução adiciona o repositório do Ubuntu 22.04 para instalar as bibliotecas webkit 4.0 necessárias. É uma solução temporária até que o aplicativo seja atualizado para usar webkit 4.1.
+
 ## Desenvolvimento
 
 ### Pré-requisitos

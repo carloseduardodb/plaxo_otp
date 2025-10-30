@@ -16,27 +16,7 @@ impl SyncManager {
         }
     }
 
-    pub async fn save_and_sync_apps(
-        &self,
-        apps: &[OtpApp],
-        key: &[u8; 32],
-        auth: Option<&GoogleDriveAuth>,
-    ) -> Result<()> {
-        // Save locally first
-        self.storage.save_apps(apps, key)?;
-        
-        // Auto-sync with Google Drive if authenticated
-        if let Some(auth) = auth {
-            if let Err(e) = self.sync_to_google_drive(apps, key, auth).await {
-                tracing::warn!("Auto-sync error: {}", e);
-                // Don't fail the operation if sync fails
-            } else {
-                tracing::info!("Auto-sync with Google Drive completed!");
-            }
-        }
-        
-        Ok(())
-    }
+
 
     pub async fn sync_to_google_drive(
         &self,
