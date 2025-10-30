@@ -1,8 +1,8 @@
-# 🔐 Plaxo OTP
+# Plaxo OTP
 
 Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Time Password) com criptografia de nível bancário.
 
-## 📸 Screenshots
+## Screenshots
 
 <!-- ADICIONE AQUI A IMAGEM DA APLICAÇÃO -->
 
@@ -16,9 +16,9 @@ Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Tim
 
 ![Plaxo OTP Interface](./docs/screenshot-03.png)
 
-## ✨ Características
+## Características
 
-### 🛡️ **Segurança Máxima**
+### **Segurança Máxima**
 
 - **Criptografia AES-256-GCM** - Padrão militar com autenticação integrada
 - **Derivação de chave SHA-256** - Com salt único para máxima proteção
@@ -26,7 +26,7 @@ Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Tim
 - **Dados sempre criptografados** - Nunca armazenados em texto plano
 - **Chave apenas na sessão** - Senha mestre não persiste no disco
 
-### 🎨 **Interface Moderna**
+### **Interface Moderna**
 
 - **Design System Plaxo** - Interface profissional e consistente
 - **Ícones das plataformas** - Reconhecimento visual automático
@@ -34,7 +34,7 @@ Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Tim
 - **Responsivo** - Adapta-se ao tamanho da janela
 - **Animações suaves** - Experiência fluida
 
-### ⚡ **Funcionalidades**
+### **Funcionalidades**
 
 - **Geração OTP automática** - Códigos TOTP de 6 dígitos
 - **Atualização em tempo real** - Renovação a cada 30 segundos
@@ -44,7 +44,7 @@ Uma aplicação desktop moderna e segura para geração de códigos OTP (One-Tim
 - **Pesquisa inteligente** - Encontre apps rapidamente
 - **System tray** - Acesso rápido pela bandeja do sistema
 
-## 🚀 Download
+## Download
 
 ### Releases Automáticos
 
@@ -54,7 +54,7 @@ Baixe a versão mais recente na [página de releases](https://github.com/carlose
 - **macOS**: `Plaxo-OTP_x.x.x_x64.dmg`
 - **Linux**: `plaxo-otp_x.x.x_amd64.deb` ou `plaxo-otp_x.x.x_amd64.AppImage`
 
-## 🛠️ Desenvolvimento
+## Desenvolvimento
 
 ### Pré-requisitos
 
@@ -101,7 +101,7 @@ npm run tauri dev
 npm run tauri build
 ```
 
-## 📱 Como Usar
+## Como Usar
 
 ### Primeira Configuração
 
@@ -131,7 +131,7 @@ npm run tauri build
 - **Barra de progresso** mostra tempo restante
 - **Pesquise** pelo nome do aplicativo
 
-## 🔒 Segurança
+## Segurança
 
 ### Criptografia
 
@@ -155,7 +155,7 @@ npm run tauri build
 | 1Password            | ✅                 | Alto               |
 | **Plaxo OTP**        | ✅                 | **Máximo**         |
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ### Frontend
 
@@ -190,7 +190,7 @@ uuid = "1.0"
 - Novo app mobile.
 - Compartilhamento de codigo de apps entre dispositivos.
 
-## 🤝 Contribuindo
+## Contribuindo
 
 1. **Fork** o projeto
 2. **Crie uma branch** para sua feature (`git checkout -b feature/nova-feature`)
@@ -198,17 +198,17 @@ uuid = "1.0"
 4. **Push** para a branch (`git push origin feature/nova-feature`)
 5. **Abra um Pull Request**
 
-## 📄 Licença
+## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🆘 Suporte
+## Suporte
 
 - **Issues**: [GitHub Issues](https://github.com/carloseduardodb/plaxo_otp/issues)
 - **Discussões**: [GitHub Discussions](https://github.com/carloseduardodb/plaxo_otp/discussions)
 - **Email**: suporte@plaxo.com
 
-## 🙏 Agradecimentos
+## Agradecimentos
 
 - **Tauri Team** - Framework incrível para apps desktop
 - **Rust Community** - Linguagem segura e performática
@@ -218,5 +218,5 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICE
 ---
 
 <div align="center">
-  <strong>Feito com ❤️ pela equipe Plaxo</strong>
+  <strong>Feito com amor pela equipe Plaxo</strong>
 </div>
