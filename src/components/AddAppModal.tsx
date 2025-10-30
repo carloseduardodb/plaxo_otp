@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, X, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, X, Loader2, AlertCircle, Image } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/tauri';
 
 interface Props {
   onSubmit: (name: string, secret: string) => Promise<void>;
@@ -11,6 +12,53 @@ export default function AddAppModal({ onSubmit, onClose }: Props) {
   const [secret, setSecret] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processingQR, setProcessingQR] = useState(false);
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    console.log('Evento paste disparado!');
+    
+    try {
+      console.log('Tentando clipboard API...');
+      const clipboardItems = await navigator.clipboard.read();
+      console.log('Clipboard items encontrados:', clipboardItems.length);
+      
+      for (const clipboardItem of clipboardItems) {
+        console.log('Item types:', clipboardItem.types);
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            console.log('Imagem encontrada:', type);
+            e.preventDefault();
+            setProcessingQR(true);
+            setError('');
+            
+            try {
+              const blob = await clipboardItem.getType(type);
+              console.log('Blob obtido, tamanho:', blob.size);
+              const arrayBuffer = await blob.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+              
+              console.log('Chamando decode_qr_from_image...');
+              const qrText = await invoke<string>('decode_qr_from_image', {
+                imageData: Array.from(uint8Array)
+              });
+              
+              console.log('QR decodificado:', qrText);
+              setSecret(qrText);
+              return;
+            } catch (err) {
+              console.error('Erro ao processar QR:', err);
+              setError(err as string || 'Erro ao processar QR code');
+            } finally {
+              setProcessingQR(false);
+            }
+          }
+        }
+      }
+      console.log('Nenhuma imagem encontrada no clipboard');
+    } catch (err) {
+      console.log('Clipboard API falhou:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,14 +116,27 @@ export default function AddAppModal({ onSubmit, onClose }: Props) {
             <label className="text-sm font-medium text-plaxo-text">
               Chave Secreta
             </label>
-            <input
-              type="text"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder="Cole aqui o código secreto do 2FA..."
-              className="w-full px-4 py-3 bg-plaxo-background/50 border border-plaxo-border rounded-xl text-plaxo-text placeholder-plaxo-text-secondary focus:outline-none focus:border-plaxo-primary focus:ring-2 focus:ring-plaxo-primary/20 transition-all font-mono text-sm"
-              disabled={loading}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
+                onPaste={handlePaste}
+                placeholder="Cole aqui o código secreto ou Ctrl+V uma imagem QR..."
+                className="w-full px-4 py-3 bg-plaxo-background/50 border border-plaxo-border rounded-xl text-plaxo-text placeholder-plaxo-text-secondary focus:outline-none focus:border-plaxo-primary focus:ring-2 focus:ring-plaxo-primary/20 transition-all font-mono text-sm"
+                disabled={loading || processingQR}
+              />
+              {processingQR && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-plaxo-primary">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-xs">Lendo QR...</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-plaxo-text-secondary flex items-center gap-1">
+              <Image className="w-3 h-3" />
+              Dica: Cole uma imagem QR code com Ctrl+V para extrair automaticamente
+            </p>
           </div>
 
           {error && (

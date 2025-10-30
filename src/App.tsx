@@ -8,6 +8,8 @@ import AddAppModal from './components/AddAppModal';
 import ImportModal from './components/ImportModal';
 import ConfirmModal from './components/ConfirmModal';
 
+import { GoogleDriveSync } from './components/GoogleDriveSync';
+
 interface OtpApp {
   id: string;
   name: string;
@@ -117,16 +119,19 @@ function App() {
   }
 
   return (
-    <div className="main-container">
+    <div className="main-container relative">
       <div className="content-container">
         <div className="header-sticky">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 bg-plaxo-primary/10 rounded-xl">
-              <Shield className="w-5 h-5 text-plaxo-primary" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-plaxo-primary/10 rounded-xl">
+                <Shield className="w-5 h-5 text-plaxo-primary" />
+              </div>
+              <h1 className="text-xl font-heading font-bold text-plaxo-text">
+                Plaxo OTP
+              </h1>
             </div>
-            <h1 className="text-xl font-heading font-bold text-plaxo-text">
-              Plaxo OTP
-            </h1>
+            <GoogleDriveSync />
           </div>
           
           <SearchBar
