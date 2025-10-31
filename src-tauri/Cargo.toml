@@ -1,6 +1,6 @@
 [package]
 name = "plaxo-otp"
-version = "1.2.3"
+version = "1.2.4"
 description = "Plaxo OTP Generator"
 authors = ["Plaxo"]
 license = ""
