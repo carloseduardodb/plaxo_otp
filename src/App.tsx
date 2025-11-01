@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { Shield, Lock } from 'lucide-react';
 import MasterPasswordModal from './components/MasterPasswordModal';
-import OtpItem from './components/OtpItem';
+import VirtualizedOtpList from './components/VirtualizedOtpList';
 import SearchBar from './components/SearchBar';
 import AddAppModal from './components/AddAppModal';
 import ImportModal from './components/ImportModal';
 import ConfirmModal from './components/ConfirmModal';
+import { useDebounce } from './hooks/useDebounce';
 
 import { GoogleDriveSync } from './components/GoogleDriveSync';
 
@@ -37,16 +38,16 @@ function App() {
     checkMasterPassword();
   }, []);
 
-  const loadApps = async () => {
+  const loadApps = useCallback(async () => {
     try {
       const loadedApps = await invoke<OtpApp[]>('get_apps');
       setApps(loadedApps);
     } catch (error) {
       console.error('Failed to load apps:', error);
     }
-  };
+  }, []);
 
-  const handleMasterPassword = async (password: string) => {
+  const handleMasterPassword = useCallback(async (password: string) => {
     try {
       const isValid = await invoke<boolean>('verify_master_password', { password });
       if (isValid) {
@@ -58,9 +59,9 @@ function App() {
       console.error('Failed to verify password:', error);
       return false;
     }
-  };
+  }, [loadApps]);
 
-  const handleReset = async () => {
+  const handleReset = useCallback(async () => {
     try {
       await invoke('reset_master_password');
       setIsAuthenticated(false);
@@ -70,9 +71,9 @@ function App() {
     } catch (error) {
       console.error('Failed to reset:', error);
     }
-  };
+  }, []);
 
-  const handleAddApp = async (name: string, secret: string) => {
+  const handleAddApp = useCallback(async (name: string, secret: string) => {
     try {
       await invoke('add_app', { name, secret });
       await loadApps();
@@ -80,20 +81,27 @@ function App() {
       console.error('Failed to add app:', error);
       throw error;
     }
-  };
+  }, [loadApps]);
 
-  const handleDeleteApp = async (id: string) => {
+  const handleDeleteApp = useCallback(async (id: string) => {
     try {
       await invoke('delete_app', { appId: id });
       await loadApps();
     } catch (error) {
       console.error('Failed to delete app:', error);
     }
-  };
+  }, [loadApps]);
 
-  const filteredApps = apps.filter(app =>
-    app.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const filteredApps = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) {
+      return apps;
+    }
+    return apps.filter(app =>
+      app.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    );
+  }, [apps, debouncedSearchTerm]);
 
   if (!isAuthenticated) {
     return (
@@ -154,16 +162,11 @@ function App() {
               </div>
             </div>
           ) : (
-            <div className="max-w-md mx-auto space-y-4">
-              {filteredApps.map(app => (
-                <OtpItem
-                  key={app.id}
-                  app={app}
-                  onDelete={handleDeleteApp}
-                  onEdit={loadApps}
-                />
-              ))}
-            </div>
+            <VirtualizedOtpList
+              apps={filteredApps}
+              onDelete={handleDeleteApp}
+              onEdit={loadApps}
+            />
           )}
         </div>
 

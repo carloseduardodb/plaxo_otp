@@ -105,10 +105,10 @@ pub fn edit_app_name(id: String, new_name: String, state: tauri::State<AppState>
 }
 
 #[tauri::command]
-pub fn delete_app(id: String, state: tauri::State<AppState>) -> Result<()> {
-    tracing::info!("Deleting app with ID: {}", id);
+pub fn delete_app(app_id: String, state: tauri::State<AppState>) -> Result<()> {
+    tracing::info!("Deleting app with ID: {}", app_id);
     
-    if !state.remove_app(&id) {
+    if !state.remove_app(&app_id) {
         return Err(AppError::AppNotFound);
     }
     
@@ -126,9 +126,7 @@ pub fn delete_app(id: String, state: tauri::State<AppState>) -> Result<()> {
 
 #[tauri::command]
 pub fn generate_otp(app_id: String, state: tauri::State<AppState>) -> Result<String> {
-    let apps = state.get_apps();
-    let app = apps.iter()
-        .find(|a| a.id == app_id)
+    let app = state.get_app_by_id(&app_id)
         .ok_or(AppError::AppNotFound)?;
     
     let otp_generator = OtpGenerator::new();

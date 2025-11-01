@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { Copy, Trash2, Check, Clock, Edit3, X } from 'lucide-react';
 import { getPlatformIcon, getPlatformColor } from '../utils/platformIcons';
+import { useOtpTimer } from '../hooks/useOtpTimer';
 
 interface Props {
   app: {
@@ -15,38 +16,38 @@ interface Props {
 
 export default function OtpItem({ app, onDelete, onEdit }: Props) {
   const [otp, setOtp] = useState('------');
-  const [timeLeft, setTimeLeft] = useState(30);
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(app.name);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const { timeLeft, shouldRefresh } = useOtpTimer();
+
+  const generateOtp = useCallback(async () => {
+    if (isGenerating) return; // Prevent concurrent calls
+    
+    setIsGenerating(true);
+    try {
+      const code = await invoke<string>('generate_otp', { appId: app.id });
+      setOtp(code);
+    } catch (error) {
+      console.error('Failed to generate OTP:', error);
+      setOtp('ERROR');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [app.id, isGenerating]);
+
+  // Generate OTP when component mounts or when timer refreshes
+  useEffect(() => {
+    generateOtp();
+  }, [generateOtp]);
 
   useEffect(() => {
-    const generateOtp = async () => {
-      try {
-        const code = await invoke<string>('generate_otp', { appId: app.id });
-        setOtp(code);
-      } catch (error) {
-        console.error('Failed to generate OTP:', error);
-        setOtp('ERROR');
-      }
-    };
-
-    const updateTimer = () => {
-      const now = Math.floor(Date.now() / 1000);
-      const remaining = 30 - (now % 30);
-      setTimeLeft(remaining);
-      
-      if (remaining === 30) {
-        generateOtp();
-      }
-    };
-
-    generateOtp();
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [app.id]);
+    if (shouldRefresh) {
+      generateOtp();
+    }
+  }, [shouldRefresh, generateOtp]);
 
   const handleEdit = async () => {
     if (editName.trim() && editName !== app.name) {
