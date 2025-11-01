@@ -8,7 +8,7 @@ export const PERFORMANCE_CONFIG = {
 
 export class MemoryManager {
   private static instance: MemoryManager;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: number | null = null;
 
   private constructor() {}
 
@@ -60,7 +60,7 @@ export class MemoryManager {
       } catch (e) {}
     }
 
-    if (process.env.NODE_ENV === "production") {
+    if (import.meta.env.PROD) {
       console.clear();
     }
   }

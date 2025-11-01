@@ -8,7 +8,7 @@ interface UseOtpTimerReturn {
 export function useOtpTimer(): UseOtpTimerReturn {
   const [timeLeft, setTimeLeft] = useState(30);
   const [shouldRefresh, setShouldRefresh] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     const updateTimer = () => {
