@@ -12,20 +12,28 @@ interface Props {
   };
   onDelete: (id: string) => void;
   onEdit?: () => void;
+  isVisible?: boolean;
 }
 
-export default function OtpItem({ app, onDelete, onEdit }: Props) {
+export default function OtpItem({ app, onDelete, onEdit, isVisible = true }: Props) {
   const [otp, setOtp] = useState('------');
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(app.name);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const { timeLeft, shouldRefresh } = useOtpTimer();
 
+  useEffect(() => {
+    if (!isVisible) {
+      setCopied(false);
+      setIsEditing(false);
+    }
+  }, [isVisible]);
+
   const generateOtp = useCallback(async () => {
-    if (isGenerating) return; // Prevent concurrent calls
-    
+    if (isGenerating || !isVisible) return;
+
     setIsGenerating(true);
     try {
       const code = await invoke<string>('generate_otp', { appId: app.id });
@@ -36,18 +44,19 @@ export default function OtpItem({ app, onDelete, onEdit }: Props) {
     } finally {
       setIsGenerating(false);
     }
-  }, [app.id, isGenerating]);
-
-  // Generate OTP when component mounts or when timer refreshes
-  useEffect(() => {
-    generateOtp();
-  }, [generateOtp]);
+  }, [app.id, isGenerating, isVisible]);
 
   useEffect(() => {
-    if (shouldRefresh) {
+    if (isVisible) {
       generateOtp();
     }
-  }, [shouldRefresh, generateOtp]);
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (shouldRefresh && isVisible) {
+      generateOtp();
+    }
+  }, [shouldRefresh, generateOtp, isVisible]);
 
   const handleEdit = async () => {
     if (editName.trim() && editName !== app.name) {
@@ -80,7 +89,7 @@ export default function OtpItem({ app, onDelete, onEdit }: Props) {
 
   const progressPercentage = (timeLeft / 30) * 100;
   const isExpiring = timeLeft <= 10;
-  
+
   const PlatformIcon = getPlatformIcon(app.name);
   const platformColor = getPlatformColor(app.name);
 
@@ -88,7 +97,7 @@ export default function OtpItem({ app, onDelete, onEdit }: Props) {
     <div className="bg-plaxo-background/30 border border-plaxo-border rounded-xl p-4 space-y-4 hover:bg-plaxo-background/50 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className="flex items-center justify-center w-10 h-10 rounded-xl"
             style={{ backgroundColor: `${platformColor}15`, color: platformColor }}
           >
@@ -143,12 +152,11 @@ export default function OtpItem({ app, onDelete, onEdit }: Props) {
           </button>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         <div className="text-center">
-          <div className={`font-mono text-3xl font-bold mb-2 tracking-wider select-all ${
-            otp === 'ERROR' ? 'text-red-500' : 'text-plaxo-primary'
-          }`}>
+          <div className={`font-mono text-3xl font-bold mb-2 tracking-wider select-all ${otp === 'ERROR' ? 'text-red-500' : 'text-plaxo-primary'
+            }`}>
             {otp === 'ERROR' ? 'INVALID' : (otp || '------')}
           </div>
           {otp === 'ERROR' && (
@@ -157,21 +165,19 @@ export default function OtpItem({ app, onDelete, onEdit }: Props) {
             </div>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <div className="otp-progress">
-            <div 
+            <div
               className={`otp-progress-bar ${isExpiring ? 'bg-plaxo-warning' : 'bg-plaxo-primary'}`}
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-plaxo-text-secondary">
               <Clock className="w-3 h-3" />
               <span>{timeLeft}s restantes</span>
             </div>
-            
             <button
               onClick={copyToClipboard}
               disabled={otp === 'ERROR'}

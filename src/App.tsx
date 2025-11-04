@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { Shield, Lock } from 'lucide-react';
 import MasterPasswordModal from './components/MasterPasswordModal';
@@ -8,6 +8,7 @@ import AddAppModal from './components/AddAppModal';
 import ImportModal from './components/ImportModal';
 import ConfirmModal from './components/ConfirmModal';
 import { useDebounce } from './hooks/useDebounce';
+import { useMemoryManager } from './hooks/useMemoryManager';
 
 import { GoogleDriveSync } from './components/GoogleDriveSync';
 
@@ -25,6 +26,35 @@ function App() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [hasMasterPassword, setHasMasterPassword] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const cleanupRef = useRef<NodeJS.Timeout>();
+  const { forceCleanup } = useMemoryManager();
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsVisible(visible);
+
+      if (!visible) {
+        cleanupRef.current = setTimeout(() => {
+          setSearchTerm('');
+          forceCleanup();
+        }, 5000);
+      } else {
+        if (cleanupRef.current) {
+          clearTimeout(cleanupRef.current);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (cleanupRef.current) {
+        clearTimeout(cleanupRef.current);
+      }
+    };
+  }, [forceCleanup]);
 
   useEffect(() => {
     const checkMasterPassword = async () => {
@@ -103,15 +133,22 @@ function App() {
     );
   }, [apps, debouncedSearchTerm]);
 
+  const displayApps = useMemo(() => {
+    if (!isVisible && filteredApps.length > 10) {
+      return filteredApps.slice(0, 10);
+    }
+    return filteredApps;
+  }, [filteredApps, isVisible]);
+
   if (!isAuthenticated) {
     return (
       <div className="auth-container">
-        <MasterPasswordModal 
-          onSubmit={handleMasterPassword} 
+        <MasterPasswordModal
+          onSubmit={handleMasterPassword}
           onReset={() => setShowResetModal(true)}
-          isFirstTime={!hasMasterPassword} 
+          isFirstTime={!hasMasterPassword}
         />
-        
+
         <ConfirmModal
           isOpen={showResetModal}
           title="Resetar Senha Mestre"
@@ -141,7 +178,6 @@ function App() {
             </div>
             <GoogleDriveSync />
           </div>
-          
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
@@ -149,9 +185,8 @@ function App() {
             onImportClick={() => setShowImportModal(true)}
           />
         </div>
-        
         <div className="content-scrollable">
-          {filteredApps.length === 0 ? (
+          {displayApps.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-plaxo-text-secondary">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-plaxo-border/20 rounded-2xl mb-4">
@@ -163,9 +198,10 @@ function App() {
             </div>
           ) : (
             <VirtualizedOtpList
-              apps={filteredApps}
+              apps={displayApps}
               onDelete={handleDeleteApp}
               onEdit={loadApps}
+              isVisible={isVisible}
             />
           )}
         </div>

@@ -275,51 +275,79 @@ pub async fn google_drive_auth_flow(state: tauri::State<'_, AppState>) -> Result
     let listener = TcpListener::bind("127.0.0.1:8080")
         .map_err(|_| AppError::GoogleDrive("Failed to start local server".to_string()))?;
     
-    // Open URL in browser
+    // Set timeout for the listener
+    listener.set_nonblocking(true)
+        .map_err(|_| AppError::GoogleDrive("Failed to set non-blocking".to_string()))?;
+    
+    // Open URL in browser - cross-platform
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("cmd")
+        .args(["/C", "start", &auth_url])
+        .spawn()
+        .map_err(|_| AppError::GoogleDrive("Failed to open browser".to_string()))?;
+    
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .arg(&auth_url)
+        .spawn()
+        .map_err(|_| AppError::GoogleDrive("Failed to open browser".to_string()))?;
+    
+    #[cfg(target_os = "linux")]
     std::process::Command::new("xdg-open")
         .arg(&auth_url)
         .spawn()
         .map_err(|_| AppError::GoogleDrive("Failed to open browser".to_string()))?;
     
-    // Wait for connection
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut stream) => {
+    // Wait for connection with timeout (60 seconds)
+    let start_time = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(60);
+    
+    loop {
+        if start_time.elapsed() > timeout {
+            return Err(AppError::GoogleDrive("Authentication timeout".to_string()));
+        }
+        
+        match listener.accept() {
+            Ok((mut stream, _)) => {
                 let mut buffer = [0; 1024];
-                stream.read(&mut buffer).unwrap();
-                let request = String::from_utf8_lossy(&buffer);
-                
-                if let Some(code_start) = request.find("code=") {
-                    let code_part = &request[code_start + 5..];
-                    if let Some(code_end) = code_part.find(' ') {
-                        let code = &code_part[..code_end];
-                        
-                        // HTTP response
-                        let response = "HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Authorization completed!</h1><p>You can close this window.</p></body></html>";
-                        stream.write_all(response.as_bytes()).unwrap();
-                        
-                        // Exchange code for token
-                        let auth = client.exchange_code(code).await?;
-                        
-                        // Save auth permanently
-                        let key = state.get_encryption_key()
-                            .ok_or(AppError::NoMasterPassword)?;
-                        
-                        let sync_manager = SyncManager::new();
-                        sync_manager.save_google_auth(&auth, &key).await?;
-                        
-                        state.set_google_auth(Some(auth));
-                        
-                        tracing::info!("Authentication successful!");
-                        return Ok(());
+                if let Ok(_) = stream.read(&mut buffer) {
+                    let request = String::from_utf8_lossy(&buffer);
+                    
+                    if let Some(code_start) = request.find("code=") {
+                        let code_part = &request[code_start + 5..];
+                        if let Some(code_end) = code_part.find(' ') {
+                            let code = &code_part[..code_end];
+                            
+                            // HTTP response
+                            let response = "HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Authorization completed!</h1><p>You can close this window.</p></body></html>";
+                            let _ = stream.write_all(response.as_bytes());
+                            
+                            // Exchange code for token
+                            let auth = client.exchange_code(code).await?;
+                            
+                            // Save auth permanently
+                            let key = state.get_encryption_key()
+                                .ok_or(AppError::NoMasterPassword)?;
+                            
+                            let sync_manager = SyncManager::new();
+                            sync_manager.save_google_auth(&auth, &key).await?;
+                            
+                            state.set_google_auth(Some(auth));
+                            
+                            tracing::info!("Authentication successful!");
+                            return Ok(());
+                        }
                     }
                 }
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                // No connection yet, sleep briefly and continue
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                continue;
             }
             Err(_) => continue,
         }
     }
-    
-    Err(AppError::GoogleDrive("Authentication timeout".to_string()))
 }
 
 #[tauri::command]

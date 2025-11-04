@@ -12,14 +12,16 @@ interface Props {
   apps: OtpApp[];
   onDelete: (id: string) => void;
   onEdit: () => void;
+  isVisible?: boolean;
 }
 
-export default function VirtualizedOtpList({ apps, onDelete, onEdit }: Props) {
+export default function VirtualizedOtpList({ apps, onDelete, onEdit, isVisible = true }: Props) {
   const visibleApps = useMemo(() => {
-    return apps.slice(0, PERFORMANCE_CONFIG.MAX_VISIBLE_APPS);
-  }, [apps]);
+    const maxApps = isVisible ? PERFORMANCE_CONFIG.MAX_VISIBLE_APPS : 5;
+    return apps.slice(0, maxApps);
+  }, [apps, isVisible]);
 
-  const hasMoreApps = apps.length > PERFORMANCE_CONFIG.MAX_VISIBLE_APPS;
+  const hasMoreApps = apps.length > visibleApps.length;
 
   return (
     <div className="max-w-md mx-auto space-y-4">
@@ -29,14 +31,15 @@ export default function VirtualizedOtpList({ apps, onDelete, onEdit }: Props) {
           app={app}
           onDelete={onDelete}
           onEdit={onEdit}
+          isVisible={isVisible}
         />
       ))}
 
       {hasMoreApps && (
         <div className="text-center text-plaxo-text-secondary text-sm py-4">
-          Mostrando {PERFORMANCE_CONFIG.MAX_VISIBLE_APPS} de {apps.length} aplicativos.
+          Mostrando {visibleApps.length} de {apps.length} aplicativos.
           <br />
-          Use a busca para encontrar aplicativos específicos.
+          {!isVisible ? "App minimizado - mostrando menos itens." : "Use a busca para encontrar aplicativos específicos."}
         </div>
       )}
     </div>

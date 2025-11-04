@@ -2,15 +2,20 @@ export const PERFORMANCE_CONFIG = {
   SEARCH_DEBOUNCE_DELAY: 300,
   MAX_CONCURRENT_OTP_GENERATIONS: 5,
   TIMER_UPDATE_INTERVAL: 1000,
-  MEMORY_CLEANUP_INTERVAL: 60000,
+  MEMORY_CLEANUP_INTERVAL: 300000, // 5 minutes instead of 1
   MAX_VISIBLE_APPS: 50,
 } as const;
 
 export class MemoryManager {
   private static instance: MemoryManager;
-  private cleanupInterval: number | null = null;
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  private isVisible = true;
 
-  private constructor() {}
+  private constructor() {
+    document.addEventListener("visibilitychange", () => {
+      this.isVisible = !document.hidden;
+    });
+  }
 
   static getInstance(): MemoryManager {
     if (!MemoryManager.instance) {
@@ -23,11 +28,12 @@ export class MemoryManager {
     if (this.cleanupInterval) return;
 
     this.cleanupInterval = setInterval(() => {
-      if (window.gc) {
-        window.gc();
+      if (!this.isVisible) {
+        this.clearStaleCache();
+        if (window.gc && import.meta.env.PROD) {
+          window.gc();
+        }
       }
-
-      this.clearStaleCache();
     }, PERFORMANCE_CONFIG.MEMORY_CLEANUP_INTERVAL);
   }
 
@@ -51,16 +57,7 @@ export class MemoryManager {
     const unusedElements = document.querySelectorAll('[data-cleanup="true"]');
     unusedElements.forEach((el) => el.remove());
 
-    if (
-      window.React &&
-      window.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
-    ) {
-      try {
-        if (window.gc) window.gc();
-      } catch (e) {}
-    }
-
-    if (import.meta.env.PROD) {
+    if (import.meta.env.PROD && !this.isVisible) {
       console.clear();
     }
   }
