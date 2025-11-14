@@ -38,9 +38,26 @@ impl Storage {
     }
 
     pub fn save_apps(&self, apps: &[OtpApp], key: &[u8; 32]) -> Result<()> {
-        let json = serde_json::to_string(apps)?;
-        let encrypted = encrypt_data(&json, key)?;
+        tracing::info!("Starting save of {} apps", apps.len());
+        
+        let json = serde_json::to_string(apps)
+            .map_err(|e| {
+                tracing::error!("Failed to serialize apps: {}", e);
+                e
+            })?;
+        
+        tracing::debug!("Serialized {} bytes of JSON", json.len());
+        
+        let encrypted = encrypt_data(&json, key)
+            .map_err(|e| {
+                tracing::error!("Failed to encrypt data: {}", e);
+                e
+            })?;
+        
+        tracing::debug!("Encrypted {} bytes", encrypted.len());
+        
         let file_path = Self::get_apps_file_path()?;
+        tracing::debug!("Target file: {:?}", file_path);
         
         // Secure write with temporary file
         let temp_path = format!("{}.tmp", file_path.to_string_lossy());
@@ -48,16 +65,31 @@ impl Storage {
         // Backup current file if it exists
         if file_path.exists() {
             let backup_path = format!("{}.backup", file_path.to_string_lossy());
-            fs::copy(&file_path, &backup_path)?;
+            fs::copy(&file_path, &backup_path)
+                .map_err(|e| {
+                    tracing::warn!("Failed to create backup: {}", e);
+                    e
+                })?;
+            tracing::debug!("Backup created");
         }
         
         // Write to temporary file
-        fs::write(&temp_path, &encrypted)?;
+        fs::write(&temp_path, &encrypted)
+            .map_err(|e| {
+                tracing::error!("Failed to write temp file: {}", e);
+                e
+            })?;
+        
+        tracing::debug!("Temp file written");
         
         // Atomic move to final file
-        fs::rename(&temp_path, &file_path)?;
+        fs::rename(&temp_path, &file_path)
+            .map_err(|e| {
+                tracing::error!("Failed to rename temp file: {}", e);
+                e
+            })?;
         
-        tracing::info!("Saved {} apps to storage", apps.len());
+        tracing::info!("Successfully saved {} apps to {:?}", apps.len(), file_path);
         Ok(())
     }
 

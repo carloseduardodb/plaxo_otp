@@ -8,6 +8,12 @@ pub struct OtpApp {
     pub secret: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QrData {
+    pub name: String,
+    pub secret: String,
+}
+
 #[derive(Debug, Error, Serialize)]
 pub enum AppError {
     #[error("Encryption error: {0}")]

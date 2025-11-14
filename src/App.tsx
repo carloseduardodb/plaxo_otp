@@ -109,7 +109,9 @@ function App() {
       await loadApps();
     } catch (error) {
       console.error('Failed to add app:', error);
-      throw error;
+      // Re-throw with better error message
+      const errorMsg = typeof error === 'string' ? error : 'Erro ao adicionar aplicativo';
+      throw new Error(errorMsg);
     }
   }, [loadApps]);
 

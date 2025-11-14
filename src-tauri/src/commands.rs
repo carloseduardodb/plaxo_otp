@@ -68,15 +68,31 @@ pub fn get_apps(state: tauri::State<AppState>) -> Vec<OtpApp> {
 pub fn add_app(name: String, secret: String, state: tauri::State<AppState>) -> Result<()> {
     tracing::info!("Adding app: {}", name);
     
+    if name.trim().is_empty() {
+        return Err(AppError::InvalidSecret("App name cannot be empty".to_string()));
+    }
+    
+    if secret.trim().is_empty() {
+        return Err(AppError::InvalidSecret("Secret cannot be empty".to_string()));
+    }
+    
     // Validate secret first
     let otp_generator = OtpGenerator::new();
     otp_generator.validate_secret(&secret)?;
     
+    // Test code generation
+    let test_code = otp_generator.generate_code(&secret)?;
+    tracing::info!("Test code generated: {}", test_code);
+    
     let id = uuid::Uuid::new_v4().to_string();
-    let app = OtpApp { id, name, secret };
+    let app = OtpApp { 
+        id: id.clone(), 
+        name: name.trim().to_string(), 
+        secret: secret.trim().to_uppercase() 
+    };
     
     state.add_app(app);
-    tracing::info!("Total apps in memory: {}", state.get_apps().len());
+    tracing::info!("App added with ID: {}, Total apps: {}", id, state.get_apps().len());
     
     // Save encrypted data
     let key = state.get_encryption_key()
@@ -84,6 +100,7 @@ pub fn add_app(name: String, secret: String, state: tauri::State<AppState>) -> R
     
     let storage = Storage::new();
     storage.save_apps(&state.get_apps(), &key)?;
+    tracing::info!("Apps saved to disk successfully");
     
     Ok(())
 }
@@ -191,14 +208,48 @@ pub fn import_2fas_file(file_content: String, state: tauri::State<AppState>) -> 
 }
 
 #[tauri::command]
-pub fn decode_qr_from_image(image_data: Vec<u8>) -> Result<String> {
+pub fn decode_qr_from_image(image_data: Vec<u8>) -> Result<crate::types::QrData> {
+    tracing::info!("Decoding QR from image, size: {} bytes", image_data.len());
+    
+    if image_data.is_empty() {
+        return Err(AppError::QrCode("Empty image data".to_string()));
+    }
+    
     let qr_reader = QrCodeReader::new();
-    qr_reader.decode_from_image(&image_data)
+    let result = qr_reader.decode_from_image(&image_data)?;
+    
+    tracing::info!("QR decoded successfully: {} - {}", result.name, result.secret);
+    Ok(result)
 }
 
 #[tauri::command]
-pub fn decode_qr_from_clipboard() -> Result<String> {
-    Err(AppError::QrCode("Please paste the QR code string manually or use an external QR code reader".to_string()))
+pub fn decode_qr_from_clipboard() -> Result<crate::types::QrData> {
+    use arboard::Clipboard;
+    
+    tracing::info!("Reading image from clipboard...");
+    
+    let mut clipboard = Clipboard::new()
+        .map_err(|e| AppError::QrCode(format!("Erro ao acessar clipboard: {}", e)))?;
+    
+    let img = clipboard.get_image()
+        .map_err(|e| AppError::QrCode(format!("Nenhuma imagem no clipboard: {}", e)))?;
+    
+    // Convert RGBA to PNG bytes
+    use image::{ImageBuffer, RgbaImage};
+    let rgba_img: RgbaImage = ImageBuffer::from_raw(img.width as u32, img.height as u32, img.bytes.into_owned())
+        .ok_or_else(|| AppError::QrCode("Erro ao processar imagem".to_string()))?;
+    
+    let mut png_bytes = Vec::new();
+    rgba_img.write_to(&mut std::io::Cursor::new(&mut png_bytes), image::ImageOutputFormat::Png)
+        .map_err(|e| AppError::QrCode(format!("Erro ao converter imagem: {}", e)))?;
+    
+    tracing::info!("Image found in clipboard, size: {} bytes", png_bytes.len());
+    
+    let qr_reader = QrCodeReader::new();
+    let result = qr_reader.decode_from_image(&png_bytes)?;
+    
+    tracing::info!("QR decoded successfully from clipboard: {} - {}", result.name, result.secret);
+    Ok(result)
 }
 
 #[tauri::command]

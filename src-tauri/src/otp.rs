@@ -48,18 +48,29 @@ impl OtpGenerator {
         let clean_secret = self.clean_secret(secret);
         
         if clean_secret.is_empty() {
-            return Err(AppError::InvalidSecret("Empty secret".to_string()));
+            return Err(AppError::InvalidSecret("Chave secreta vazia".to_string()));
+        }
+        
+        if clean_secret.len() < 16 {
+            return Err(AppError::InvalidSecret("Chave secreta muito curta (mínimo 16 caracteres)".to_string()));
         }
         
         // Validate Base32 characters
-        if !clean_secret.chars().all(|c| "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".contains(c)) {
-            return Err(AppError::InvalidSecret("Invalid Base32 characters".to_string()));
+        let invalid_chars: Vec<char> = clean_secret
+            .chars()
+            .filter(|c| !"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".contains(*c))
+            .collect();
+        
+        if !invalid_chars.is_empty() {
+            return Err(AppError::InvalidSecret(
+                format!("Caracteres inválidos na chave: {:?}. Use apenas A-Z e 2-7", invalid_chars)
+            ));
         }
         
         // Try to decode
-        Secret::Encoded(clean_secret)
+        Secret::Encoded(clean_secret.clone())
             .to_bytes()
-            .map_err(|e| AppError::InvalidSecret(format!("Invalid Base32 secret: {}", e)))?;
+            .map_err(|e| AppError::InvalidSecret(format!("Chave Base32 inválida: {}", e)))?;
         
         Ok(())
     }

@@ -15,63 +15,57 @@ export default function AddAppModal({ onSubmit, onClose }: Props) {
   const [processingQR, setProcessingQR] = useState(false);
 
   const handlePaste = async (e: React.ClipboardEvent) => {
-    console.log('Evento paste disparado!');
+    e.preventDefault();
+    setProcessingQR(true);
+    setError('');
     
     try {
-      console.log('Tentando clipboard API...');
-      const clipboardItems = await navigator.clipboard.read();
-      console.log('Clipboard items encontrados:', clipboardItems.length);
+      const qrData = await invoke<{ name: string; secret: string }>('decode_qr_from_clipboard');
       
-      for (const clipboardItem of clipboardItems) {
-        console.log('Item types:', clipboardItem.types);
-        for (const type of clipboardItem.types) {
-          if (type.startsWith('image/')) {
-            console.log('Imagem encontrada:', type);
-            e.preventDefault();
-            setProcessingQR(true);
-            setError('');
-            
-            try {
-              const blob = await clipboardItem.getType(type);
-              console.log('Blob obtido, tamanho:', blob.size);
-              const arrayBuffer = await blob.arrayBuffer();
-              const uint8Array = new Uint8Array(arrayBuffer);
-              
-              console.log('Chamando decode_qr_from_image...');
-              const qrText = await invoke<string>('decode_qr_from_image', {
-                imageData: Array.from(uint8Array)
-              });
-              
-              console.log('QR decodificado:', qrText);
-              setSecret(qrText);
-              return;
-            } catch (err) {
-              console.error('Erro ao processar QR:', err);
-              setError(err as string || 'Erro ao processar QR code');
-            } finally {
-              setProcessingQR(false);
-            }
-          }
-        }
+      if (!qrData.secret || qrData.secret.trim().length === 0) {
+        throw new Error('QR code não contém dados válidos');
       }
-      console.log('Nenhuma imagem encontrada no clipboard');
+      
+      setSecret(qrData.secret.trim());
+      if (qrData.name && qrData.name !== 'Unknown') {
+        setName(qrData.name);
+      }
     } catch (err) {
-      console.log('Clipboard API falhou:', err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      // Se não for imagem, permite paste normal
+      if (!errorMsg.includes('Nenhuma imagem')) {
+        setError(`Erro ao processar QR: ${errorMsg}`);
+      }
+    } finally {
+      setProcessingQR(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !secret.trim()) return;
+    
+    const trimmedName = name.trim();
+    const trimmedSecret = secret.trim();
+    
+    if (!trimmedName) {
+      setError('Nome do aplicativo é obrigatório');
+      return;
+    }
+    
+    if (!trimmedSecret) {
+      setError('Chave secreta é obrigatória');
+      return;
+    }
 
     setLoading(true);
     setError('');
 
     try {
-      await onSubmit(name.trim(), secret.trim());
+      await onSubmit(trimmedName, trimmedSecret);
       onClose();
     } catch (err) {
-      setError('Erro ao adicionar aplicativo');
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setError(errorMsg || 'Erro ao adicionar aplicativo');
     } finally {
       setLoading(false);
     }
